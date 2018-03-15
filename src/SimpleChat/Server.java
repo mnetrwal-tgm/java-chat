@@ -66,7 +66,7 @@ public class Server {
     			   }else if(scannerin.equals("/ls")){
     				   System.out.println(s.listAllClients());
     			   }else if(scannerin.equals("/help")){
-    				   System.out.println("/help ... shows this page\n/exit ... closes the server and disconnects clients\n/ls ... lists all active clients");
+    				   System.err.println("/help ... shows this page\n/exit ... closes the server and disconnects clients\n/ls ... lists all active clients");
     			   }else{
     				   s.sendToAllClients("<SERVER> "+scannerin);
     				   System.out.println("<SERVER> "+scannerin);
