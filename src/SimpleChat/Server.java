@@ -56,12 +56,12 @@ public class Server {
     			   if(scannerin.equals("exit")) {
     				   s.sendToAllClients("exit");
     				   t.interrupt();
-    				   s.list_clientWriter = null;
     				   Iterator i = s.clientThread.iterator();
     				   while(i.hasNext()) {
     					   t=(Thread)i.next();
     					   t.interrupt();
     				   }
+    				   System.exit(0);
     				   break;
     			   }else {
     				   s.sendToAllClients("<SERVER> "+scannerin);
@@ -110,6 +110,7 @@ public class Server {
 	               	                     first=false;
                             	 	 }else {
 	                            	 	 if(nachricht.equals("exit")) {
+	                            	 		 sendToAllClients("\n"+list_clientWriter.get(writer)+" disconnected.\n");
 	                            	 		 writer.println("exit");
 	                            	 		 writer.flush();
 	                            	 		 client.close();
