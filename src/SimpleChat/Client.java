@@ -1,12 +1,16 @@
 package SimpleChat;
 
 
+import SimpleChat.values;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +21,7 @@ import java.net.Socket;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -47,7 +52,7 @@ public class Client {
      public void createGUI() {
              clientFrame = new JFrame("Momo-Chat");
              clientFrame.setSize(800, 600);
-            
+             
              // Panel erzeugen, welches alle anderen Inhalte enthält
              clientPanel = new JPanel();
             
@@ -61,6 +66,7 @@ public class Client {
              button_SendMessage.addActionListener(new SendButtonListener());
             
              textField_Username = new JTextField(10);
+             textField_Username.disable();
             
              // Scrollbalken zur textArea hinzufügen
              scrollPane_Messages = new JScrollPane(textArea_Messages);
@@ -91,11 +97,30 @@ public class Client {
     
      public boolean connectToServer() {
              try {
-                     client = new Socket("127.0.0.1", 5555);
+                     client = new Socket(values.server, 5050);
                      reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
                      writer = new PrintWriter(client.getOutputStream());
                      appendTextMessages("Netzwerkverbindung hergestellt");
-                    
+                     
+                     String nachricht= JOptionPane.showInputDialog("What is your Username? (leave empty for anonymus chating)");
+                     if(nachricht.equals("")) {
+                    	 writer.println("none");
+                    	 writer.flush();
+                    	 textField_Username.setText(reader.readLine());
+                     }else {
+                    	 writer.println(nachricht+":");
+                    	 textField_Username.setText(nachricht);
+                     }
+                     
+                     clientFrame.addWindowListener(new WindowAdapter()
+                     {
+                         public void windowClosing(WindowEvent e)
+                         {
+                             writer.println("exit");
+                             writer.flush();
+                         }
+                     });
+                     
                      return true;
              } catch(Exception e) {
                      appendTextMessages("Netzwerkverbindung konnte nicht hergestellt werden");
@@ -106,7 +131,15 @@ public class Client {
      }
     
      public void sendMessageToServer() {
-             writer.println(textField_Username.getText() + ": " + textField_ClientMessage.getText());
+    	 	 if(textField_ClientMessage.getText().startsWith("/")) {
+    	 		if (textField_ClientMessage.getText().equals("/ls")||textField_ClientMessage.getText().equals("/list")) {
+                    writer.println("ls");
+                }else if (textField_ClientMessage.getText().equals("/exit")||textField_ClientMessage.getText().equals("/close")) {
+                    writer.println("exit");
+                }
+    	 	 }else {
+    	 		 writer.println(textField_Username.getText() + ": " + textField_ClientMessage.getText());
+    	 	 }
              writer.flush();
             
              textField_ClientMessage.setText("");
@@ -152,8 +185,15 @@ public class Client {
                     
                      try {
                              while((message = reader.readLine()) != null) {
-                                     appendTextMessages(message);
+                            	 if(message.equals("exit")) {
+                            		 message="The Server closed the connection. Bye.";
+                            		 appendTextMessages(message);
                                      textArea_Messages.setCaretPosition(textArea_Messages.getText().length());
+                                	 break;
+                                 }else {
+	                                 appendTextMessages(message);
+	                                 textArea_Messages.setCaretPosition(textArea_Messages.getText().length());
+                                 }
                              }
                      } catch (IOException e) {
                              appendTextMessages("Nachricht konnte nicht empfangen werden!");

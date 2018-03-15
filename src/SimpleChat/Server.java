@@ -10,8 +10,9 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -24,7 +25,7 @@ import javax.swing.text.html.HTMLEditorKit;
 public class Server {
 
      ServerSocket server;
-     ArrayList<PrintWriter> list_clientWriter;
+     Map<PrintWriter,String> list_clientWriter;
     
      final int LEVEL_ERROR = 1;
      final int LEVEL_NORMAL = 0;
@@ -47,6 +48,8 @@ public class Server {
                      try {
                              this.client = client;
                              reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+
+                             
                      } catch (IOException e) {
                              e.printStackTrace();
                      }
@@ -55,11 +58,38 @@ public class Server {
              @Override
              public void run() {
                      String nachricht;
+                     
                     
+
+                     boolean first=true;
                      try {
+                    	 PrintWriter writer = new PrintWriter(client.getOutputStream());
                              while((nachricht = reader.readLine()) != null) {
-                                     appendTextToConsole("Vom Client: \n" + nachricht, LEVEL_NORMAL);
-                                     sendToAllClients(nachricht);
+                            	 	 if (first) {
+	               	                     System.out.println(nachricht);
+	               	                     if(nachricht.equals("none")) {
+	               	                    	 list_clientWriter.put(writer,"Client "+list_clientWriter.size());
+	               	                    	 writer.println("Client "+list_clientWriter.size());
+	               	                    	 writer.flush();
+	               	                     }else {
+	               	                    	 list_clientWriter.put(writer,nachricht.substring(0, nachricht.length()-2));
+	               	                     }
+	               	                     first=false;
+                            	 	 }else {
+	                            	 	 if(nachricht.equals("exit")) {
+	                            	 		 writer.println("exit");
+	                            	 		 writer.flush();
+	                            	 		 client.close();
+	                            	 		 list_clientWriter.remove(client);
+	                            	 		 break;
+	                            	 	 }else if(nachricht.equals("ls")) {
+	                            	 		 listAllClients(writer);
+	                            	 	 }else {
+		                                     appendTextToConsole("Vom Client: \n" + nachricht, LEVEL_NORMAL);
+		                                     sendToAllClients(nachricht);
+		                                     
+	                            	 	 }
+	                            	}
                              }
                      } catch (IOException e) {
                              e.printStackTrace();
@@ -72,8 +102,6 @@ public class Server {
                      try {
                              Socket client = server.accept();
                             
-                             PrintWriter writer = new PrintWriter(client.getOutputStream());
-                             list_clientWriter.add(writer);
                             
                              Thread clientThread = new Thread(new ClientHandler(client));
                              clientThread.start();
@@ -85,10 +113,10 @@ public class Server {
 
      public boolean runServer() {
              try {
-                     server = new ServerSocket(5555);
+                     server = new ServerSocket(5050);
                      appendTextToConsole("Server wurde gestartet!", LEVEL_ERROR);
                     
-                     list_clientWriter = new ArrayList<PrintWriter>();
+                     list_clientWriter = new HashMap<PrintWriter,String>();
                      return true;
              } catch (IOException e) {
                      appendTextToConsole("Server konnte nicht gestartet werden!", LEVEL_ERROR);
@@ -105,13 +133,25 @@ public class Server {
              }
      }
     
+     public void listAllClients(PrintWriter specwriter) {
+         Iterator it = list_clientWriter.entrySet().iterator();
+         String message ="\n";
+         while(it.hasNext()) {
+        	 	 Map.Entry pair = (Map.Entry) it.next();
+                 message=message+pair.getValue()+"\n";
+         }
+         specwriter.println(message);
+         specwriter.flush();
+ }
+     
      public void sendToAllClients(String message) {
-             Iterator it = list_clientWriter.iterator();
-            
-             while(it.hasNext()) {
-                     PrintWriter writer = (PrintWriter) it.next();
-                     writer.println(message);
-                     writer.flush();
-             }
-     }
+         Iterator it = list_clientWriter.entrySet().iterator();
+        
+         while(it.hasNext()) {
+        	 	 Map.Entry pair = (Map.Entry) it.next();
+                 PrintWriter writer = (PrintWriter) pair.getKey();
+                 writer.println(message);
+                 writer.flush();
+         }
+ }
 }
