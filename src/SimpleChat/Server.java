@@ -50,10 +50,10 @@ public class Server {
     		    });
     		   t.start();
     		   Scanner scanner = new Scanner(System.in);
-    		   System.err.print("Type 'exit' to close Server and disconnect clients. Else interact to your liking");
+    		   System.err.print("Type '/help' to see options. Else interact to your liking\n");
     		   while (true) {
     			   String scannerin = scanner.next();
-    			   if(scannerin.equals("exit")) {
+    			   if(scannerin.equals("/exit")) {
     				   s.sendToAllClients("exit");
     				   t.interrupt();
     				   Iterator i = s.clientThread.iterator();
@@ -63,8 +63,13 @@ public class Server {
     				   }
     				   System.exit(0);
     				   break;
-    			   }else {
+    			   }else if(scannerin.equals("/ls")){
+    				   System.out.println(s.listAllClients());
+    			   }else if(scannerin.equals("/help")){
+    				   System.out.println("/help ... shows this page\n/exit ... closes the server and disconnects clients\n/ls ... lists all active clients");
+    			   }else{
     				   s.sendToAllClients("<SERVER> "+scannerin);
+    				   System.out.println("<SERVER> "+scannerin);
     			   }
     		   }
              } else {
@@ -99,9 +104,8 @@ public class Server {
                     	 PrintWriter writer = new PrintWriter(client.getOutputStream());
                              while((nachricht = reader.readLine()) != null) {
                             	 	 if (first) {
-	               	                     System.out.println(nachricht);
 	               	                     if(nachricht.equals("none")) {
-	               	                    	 list_clientWriter.put(writer,"Client "+list_clientWriter.size());
+	               	                    	 list_clientWriter.put(writer,"Client "+(list_clientWriter.size()+1));
 	               	                    	 writer.println("Client "+list_clientWriter.size());
 	               	                    	 writer.flush();
 	               	                     }else {
@@ -114,12 +118,12 @@ public class Server {
 	                            	 		 writer.println("exit");
 	                            	 		 writer.flush();
 	                            	 		 client.close();
-	                            	 		 list_clientWriter.remove(client);
+	                            	 		 list_clientWriter.remove(writer);
 	                            	 		 break;
 	                            	 	 }else if(nachricht.equals("ls")) {
 	                            	 		 listAllClients(writer);
 	                            	 	 }else {
-		                                     appendTextToConsole("Vom Client: \n" + nachricht, LEVEL_NORMAL);
+		                                     appendTextToConsole(nachricht, LEVEL_NORMAL);
 		                                     sendToAllClients(nachricht);
 		                                     
 	                            	 	 }
@@ -177,6 +181,17 @@ public class Server {
          }
          specwriter.println(message);
          specwriter.flush();
+ }
+     
+     
+     public String listAllClients() {
+         Iterator it = list_clientWriter.entrySet().iterator();
+         String message ="\n";
+         while(it.hasNext()) {
+        	 	 Map.Entry pair = (Map.Entry) it.next();
+                 message=message+pair.getValue()+"\n";
+         }
+         return message;
  }
      
      public void sendToAllClients(String message) {
