@@ -10,9 +10,11 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -26,6 +28,7 @@ public class Server {
 
      ServerSocket server;
      Map<PrintWriter,String> list_clientWriter;
+     ArrayList <Thread> clientThread=new ArrayList<Thread>();
     
      final int LEVEL_ERROR = 1;
      final int LEVEL_NORMAL = 0;
@@ -33,7 +36,37 @@ public class Server {
      public static void main(String[] args) {
              Server s = new Server();
              if (s.runServer()) {
-                     s.listenToClients();
+            	
+    		    // start a new thread
+    		   Thread t = new Thread(new Runnable() {
+    		        public void run() {
+    		            try {
+    		            	s.listenToClients();
+
+    		            } catch (Exception e) {
+    		                e.printStackTrace();
+    		            }
+    		        }
+    		    });
+    		   t.start();
+    		   Scanner scanner = new Scanner(System.in);
+    		   System.err.print("Type 'exit' to close Server and disconnect clients. Else interact to your liking");
+    		   while (true) {
+    			   String scannerin = scanner.next();
+    			   if(scannerin.equals("exit")) {
+    				   s.sendToAllClients("exit");
+    				   t.interrupt();
+    				   s.list_clientWriter = null;
+    				   Iterator i = s.clientThread.iterator();
+    				   while(i.hasNext()) {
+    					   t=(Thread)i.next();
+    					   t.interrupt();
+    				   }
+    				   break;
+    			   }else {
+    				   s.sendToAllClients("<SERVER> "+scannerin);
+    			   }
+    		   }
              } else {
                      // Do nothing
              }
@@ -102,9 +135,10 @@ public class Server {
                      try {
                              Socket client = server.accept();
                             
-                            
-                             Thread clientThread = new Thread(new ClientHandler(client));
-                             clientThread.start();
+                             Thread t=new Thread(new ClientHandler(client));
+                             t.start();
+                             clientThread.add(t);
+                             
                      } catch (IOException e) {
                              e.printStackTrace();
                      }              
