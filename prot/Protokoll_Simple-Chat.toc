@@ -1,0 +1,4 @@
+\select@language {german}
+\contentsline {section}{\numberline {1}Server}{3}{section.1}
+\contentsline {section}{\numberline {2}Client}{4}{section.2}
+\contentsline {section}{\numberline {3}Probleme}{5}{section.3}

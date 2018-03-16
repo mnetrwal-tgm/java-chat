@@ -70,13 +70,11 @@ public class Client {
              scrollPane_Messages.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);              
             
             
-             if(!connectToServer()) {
-                     // Connect-Label anzeigen ob verbunden oder nicht...
+             if(connectToServer()) {
+            	 Thread t = new Thread(new MessagesFromServerListener());
+                 t.start();
+                
              }
-            
-             Thread t = new Thread(new MessagesFromServerListener());
-             t.start();
-            
              clientPanel.add(scrollPane_Messages);
              clientPanel.add(textField_Username);
              clientPanel.add(textField_ClientMessage);
@@ -87,6 +85,7 @@ public class Client {
             
              clientFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
              clientFrame.setVisible(true);
+             
      }
     
      public boolean connectToServer() {
